@@ -1,11 +1,60 @@
+import functools
 from urlparse import urljoin
 
 import requests
 import asterisk.manager
-from itsdangerous import URLSafeSerializer, BadSignature
+from requests_oauthlib import OAuth1
 
 from flask import Flask, request, jsonify, abort
+
+from oauthlib.oauth1 import RequestValidator, ResourceEndpoint
+import config
 app = Flask(__name__)
+
+class DialerRequestValidator(RequestValidator):
+    enforce_ssl = False
+    client_key_length = 3, 50
+    access_token_length = 3, 50
+
+    def get_client_secret(self, client_key, request):
+        return None
+
+    def get_access_token_secret(self, client_key, resource_owner_key, request):
+        return unicode(config.AUTH_TOKEN)
+
+    def validate_timestamp_and_nonce(self, client_key, timestamp, nonce,
+            request, request_token=None, access_token=None):
+        return True
+
+    def validate_client_key(self, client_key, request):
+        return client_key == 'uaprom'
+
+    def validate_access_token(self, client_key, token, request):
+        return token == 'crm'
+
+    def validate_realms(self, client_key, token, request, uri=None,
+            realms=None):
+        return True
+
+
+validator = DialerRequestValidator()
+endpoint = ResourceEndpoint(validator)
+
+def oauth_protected(realms=None):
+    def wrapper(f):
+        @functools.wraps(f)
+        def verify_oauth(*args, **kwargs):
+            v, r = endpoint.validate_protected_resource_request(request.url,
+                    http_method=request.method,
+                    body=request.data,
+                    headers=request.headers,
+                    realms=realms or [])
+            if v:
+                return f(*args, **kwargs)
+            else:
+                return abort(403)
+        return verify_oauth
+    return wrapper
 
 SITES = {
     'UA': 'http://my.prom.ua/',
@@ -15,10 +64,8 @@ SITES = {
 }
 
 @app.route('/call', methods=['POST'])
+@oauth_protected()
 def call():
-    if request.form['token'] != app.config['token']:
-        abort(403)
-
     inline = request.form['inline']
     exten = request.form['exten']
 
@@ -26,20 +73,17 @@ def call():
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
-        app.logger.debug('Try to connect to asterisk_address=%s and asterisk_port=%s' % (app.config['asterisk_address'], app.config['asterisk_port']))
-        manager.connect(app.config['asterisk_address'], app.config['asterisk_port'])
-        app.logger.debug('Try to login to asterisk_login=%s and asterisk_password=%s' % (app.config['asterisk_login'], app.config['asterisk_password']))
-        manager.login(app.config['asterisk_login'], app.config['asterisk_password'])
+        app.logger.debug('Try to connect to asterisk_address=%s and asterisk_port=%s' % (config.ASTERISK_ADDRESS, config.ASTERISK_PORT))
+        manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
+        app.logger.debug('Try to login to asterisk_login=%s and asterisk_password=%s' % (config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD))
+        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
         app.logger.debug('Try to call channel=%s and exten=%s' % (channel, exten))
         response = manager.originate(channel, exten, caller_id='call_from_CRM <CRM>', async=True).response
     except asterisk.manager.ManagerSocketException, (errno, reason):
-        status = 'failure'
         error_msg = 'Error connecting to the manager: %s' % reason
     except asterisk.manager.ManagerAuthException, reason:
-        status = 'failure'
         error_msg = 'Error logging in to the manager: %s' % reason
     except asterisk.manager.ManagerException, reason:
-        status = 'failure'
         error_msg = 'Error: %s' % reason
     finally:
         manager.close()
@@ -48,15 +92,13 @@ def call():
 
 
 @app.route('/show_inuse', methods=['GET'])
+@oauth_protected()
 def show_inuse():
-    if request.args['token'] != app.config['token']:
-        abort(403)
-
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
-        manager.connect(app.config['asterisk_address'], app.config['asterisk_port'])
-        manager.login(app.config['asterisk_login'], app.config['asterisk_password'])
+        manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
+        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
         response = manager.command('sip show inuse').data
     except asterisk.manager.ManagerSocketException, (errno, reason):
         status = 'failure'
@@ -73,15 +115,13 @@ def show_inuse():
     return jsonify(status=status, error=error_msg, response=response)
     
 @app.route('/show_channels', methods=['GET'])
+@oauth_protected()
 def show_channels():
-    if request.args['token'] != app.config['token']:
-        abort(403)
-
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
-        manager.connect(app.config['asterisk_address'], app.config['asterisk_port'])
-        manager.login(app.config['asterisk_login'], app.config['asterisk_password'])
+        manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
+        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
         response = manager.command('core show channels verbose').data
     except asterisk.manager.ManagerSocketException, (errno, reason):
         status = 'failure'
@@ -98,17 +138,15 @@ def show_channels():
     return jsonify(status=status, error=error_msg, response=response)
 
 @app.route('/spy', methods=['POST'])
+@oauth_protected()
 def spy():
-    if request.form['token'] != app.config['token']:
-        abort(403)
-
     inline = request.form['inline']
     exten = request.form['exten']
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
-        manager.connect(app.config['asterisk_address'], app.config['asterisk_port'])
-        manager.login(app.config['asterisk_login'], app.config['asterisk_password'])
+        manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
+        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
         manager.send_action({
             'Action': 'Originate',
             'Channel': 'SIP/%s' % inline,
@@ -131,10 +169,8 @@ def spy():
 
 
 @app.route('/queue_add', methods=['POST'])
+@oauth_protected()
 def queue_add():
-    if request.form['token'] != app.config['token']:
-        abort(403)
-
     queue = request.form['queue']
     interface = request.form['interface']
     state_interface = request.form['state_interface']
@@ -142,8 +178,8 @@ def queue_add():
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
-        manager.connect(app.config['asterisk_address'], app.config['asterisk_port'])
-        manager.login(app.config['asterisk_login'], app.config['asterisk_password'])
+        manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
+        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
         response = manager.send_action({
             'Action': 'QueueAdd',
             'Queue': queue,
@@ -165,17 +201,15 @@ def queue_add():
 
     
 @app.route('/db_get', methods=['GET'])
+@oauth_protected()
 def db_get():
-    if request.args['token'] != app.config['token']:
-        abort(403)
-
     family = request.args['family']
     key = request.args['key']
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
-        manager.connect(app.config['asterisk_address'], app.config['asterisk_port'])
-        manager.login(app.config['asterisk_login'], app.config['asterisk_password'])
+        manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
+        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
         response = manager.command('database get %s %s' % (family, key)).response
     except asterisk.manager.ManagerSocketException, (errno, reason):
         status = 'failure'
@@ -192,15 +226,13 @@ def db_get():
     return jsonify(status=status, error=error_msg, response=response)
 
 @app.route('/queue_status', methods=['GET'])
+@oauth_protected()
 def queue_status():
-    if request.args['token'] != app.config['token']:
-        abort(403)
-
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
-        manager.connect(app.config['asterisk_address'], app.config['asterisk_port'])
-        manager.login(app.config['asterisk_login'], app.config['asterisk_password'])
+        manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
+        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
         response = manager.send_action({
             'Action': 'QueueStatus',
         }).response
@@ -219,16 +251,15 @@ def queue_status():
     return jsonify(status=status, error=error_msg, response=response)
 
 @app.route('/queue_remove', methods=['POST'])
+@oauth_protected()
 def queue_remove():
-    if request.form['token'] != app.config['token']:
-        abort(403)
     queue = request.form['queue']
     interface = request.form['interface']
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
-        manager.connect(app.config['asterisk_address'], app.config['asterisk_port'])
-        manager.login(app.config['asterisk_login'], app.config['asterisk_password'])
+        manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
+        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
         response = manager.send_action({
             'Action': 'QueueRemove',
             'Queue': queue,
@@ -247,14 +278,15 @@ def queue_remove():
         manager.close()
     return jsonify(status=status, error=error_msg, response=response)
 
-
+### API ###
 @app.route('/manager_phone', methods=['GET'])
 def manager_phone():
     calling_phone = request.args['calling_phone']
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone')
-    payload = {'calling_phone': calling_phone, 'token': app.config['token']}
-    response = requests.get(api_url, params=payload)
+    payload = {'calling_phone': calling_phone}
+    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text
     else:
@@ -265,8 +297,9 @@ def manager_phone_for_company():
     id = request.args['id']
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone_for_company')
-    payload = {'id': id, 'token': app.config['token']}
-    response = requests.get(api_url, params=payload)
+    payload = {'id': id}
+    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text
     else:
@@ -278,8 +311,9 @@ def show_calling_popup_to_manager():
     inner_number = request.args['inner_number']
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/show_calling_popup_to_manager')
-    payload = {'calling_phone': calling_phone, 'inner_number': inner_number, 'token': app.config['token']}
-    response = requests.get(api_url, params=payload)
+    payload = {'calling_phone': calling_phone, 'inner_number': inner_number}
+    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text
     else:
@@ -291,8 +325,9 @@ def show_calling_review_popup_to_manager():
     review_href = request.args['review_href']
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/show_calling_review_popup_to_manager')
-    payload = {'inner_number': inner_number, 'review_href': review_href, 'token': app.config['token']}
-    response = requests.get(api_url, params=payload)
+    payload = {'inner_number': inner_number, 'review_href': review_href}
+    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text
     else:
@@ -303,25 +338,10 @@ def manager_call_after_hours():
     calling_phone = request.args['calling_phone']
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_call_after_hours')
-    payload = {'calling_phone': calling_phone, 'token': app.config['token']}
-    response = requests.get(api_url, params=payload)
+    payload = {'calling_phone': calling_phone}
+    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text
     else:
         abort(response.status_code)
-
-def main(global_config, **local_config):
-    from paste.util.converters import asbool
-
-    conf = dict(global_config, **local_config)
-
-    app.config.update(
-        asterisk_address=conf.get('asterisk.address'),
-        asterisk_port=conf.get('asterisk.port'),
-        asterisk_login=conf.get('asterisk.login'),
-        asterisk_password=conf.get('asterisk.password'),
-        token=conf.get('token')
-    )
-    app.debug = asbool(conf.get('debug'))
-
-    return app
