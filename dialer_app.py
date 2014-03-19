@@ -20,7 +20,7 @@ class DialerRequestValidator(RequestValidator):
         return None
 
     def get_access_token_secret(self, client_key, resource_owner_key, request):
-        return unicode(config.AUTH_TOKEN)
+        return unicode(config.RESOURCE_OWNER_SECRET)
 
     def validate_timestamp_and_nonce(self, client_key, timestamp, nonce,
             request, request_token=None, access_token=None):
@@ -285,7 +285,7 @@ def manager_phone():
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone')
     payload = {'calling_phone': calling_phone}
-    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
     response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text
@@ -298,7 +298,7 @@ def manager_phone_for_company():
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone_for_company')
     payload = {'id': id}
-    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
     response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text
@@ -312,7 +312,7 @@ def show_calling_popup_to_manager():
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/show_calling_popup_to_manager')
     payload = {'calling_phone': calling_phone, 'inner_number': inner_number}
-    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
     response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text
@@ -326,7 +326,7 @@ def show_calling_review_popup_to_manager():
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/show_calling_review_popup_to_manager')
     payload = {'inner_number': inner_number, 'review_href': review_href}
-    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
     response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text
@@ -339,7 +339,7 @@ def manager_call_after_hours():
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_call_after_hours')
     payload = {'calling_phone': calling_phone}
-    auth = OAuth1('dialer', resource_owner_key='dialer_key', resource_owner_secret=config.AUTH_TOKEN)
+    auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
     response = requests.get(api_url, params=payload, auth=auth)
     if response.status_code == 200:
         return response.text

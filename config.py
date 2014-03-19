@@ -3,7 +3,8 @@ ASTERISK_ADDRESS = ''
 ASTERISK_PORT = ''
 ASTERISK_LOGIN = ''
 ASTERISK_PASSWORD = ''
-AUTH_TOKEN = ''
+RESOURCE_OWNER_KEY = ''
+RESOURCE_OWNER_SECRET = ''
 
 try:
     from local_config import *
