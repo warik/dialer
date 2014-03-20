@@ -279,7 +279,7 @@ def queue_remove():
     return jsonify(status=status, error=error_msg, response=response)
 
 ### API ###
-@app.route('/manager_phone', methods=['GET'])
+@app.route('/api/manager_phone', methods=['GET'])
 def manager_phone():
     calling_phone = request.args['calling_phone']
     country = request.args['country'].upper()
@@ -292,7 +292,7 @@ def manager_phone():
     else:
         abort(response.status_code)
 
-@app.route('/manager_phone_for_company', methods=['GET'])
+@app.route('/api/manager_phone_for_company', methods=['GET'])
 def manager_phone_for_company():
     id = request.args['id']
     country = request.args['country'].upper()
@@ -305,7 +305,7 @@ def manager_phone_for_company():
     else:
         abort(response.status_code)
 
-@app.route('/show_calling_popup_to_manager', methods=['GET'])
+@app.route('/api/show_calling_popup_to_manager', methods=['GET'])
 def show_calling_popup_to_manager():
     calling_phone = request.args['calling_phone']
     inner_number = request.args['inner_number']
@@ -319,7 +319,7 @@ def show_calling_popup_to_manager():
     else:
         abort(response.status_code)
 
-@app.route('/show_calling_review_popup_to_manager', methods=['GET'])
+@app.route('/api/show_calling_review_popup_to_manager', methods=['GET'])
 def show_calling_review_popup_to_manager():
     inner_number = request.args['inner_number']
     review_href = request.args['review_href']
@@ -333,7 +333,7 @@ def show_calling_review_popup_to_manager():
     else:
         abort(response.status_code)
 
-@app.route('/manager_call_after_hours', methods=['GET'])
+@app.route('/api/manager_call_after_hours', methods=['GET'])
 def manager_call_after_hours():
     calling_phone = request.args['calling_phone']
     country = request.args['country'].upper()
