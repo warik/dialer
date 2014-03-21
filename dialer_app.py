@@ -281,6 +281,8 @@ def queue_remove():
 ### API ###
 @app.route('/api/manager_phone', methods=['GET'])
 def manager_phone():
+    if request.remote_addr not in config.ALLOWED_HOSTS:
+        abort(403)
     calling_phone = request.args['calling_phone']
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone')
@@ -294,6 +296,8 @@ def manager_phone():
 
 @app.route('/api/manager_phone_for_company', methods=['GET'])
 def manager_phone_for_company():
+    if request.remote_addr not in config.ALLOWED_HOSTS:
+        abort(403)
     id = request.args['id']
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone_for_company')
@@ -307,6 +311,8 @@ def manager_phone_for_company():
 
 @app.route('/api/show_calling_popup_to_manager', methods=['GET'])
 def show_calling_popup_to_manager():
+    if request.remote_addr not in config.ALLOWED_HOSTS:
+        abort(403)
     calling_phone = request.args['calling_phone']
     inner_number = request.args['inner_number']
     country = request.args['country'].upper()
@@ -321,6 +327,8 @@ def show_calling_popup_to_manager():
 
 @app.route('/api/show_calling_review_popup_to_manager', methods=['GET'])
 def show_calling_review_popup_to_manager():
+    if request.remote_addr not in config.ALLOWED_HOSTS:
+        abort(403)
     inner_number = request.args['inner_number']
     review_href = request.args['review_href']
     country = request.args['country'].upper()
@@ -335,6 +343,8 @@ def show_calling_review_popup_to_manager():
 
 @app.route('/api/manager_call_after_hours', methods=['GET'])
 def manager_call_after_hours():
+    if request.remote_addr not in config.ALLOWED_HOSTS:
+        abort(403)
     calling_phone = request.args['calling_phone']
     country = request.args['country'].upper()
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_call_after_hours')

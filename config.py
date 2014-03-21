@@ -5,6 +5,7 @@ ASTERISK_LOGIN = ''
 ASTERISK_PASSWORD = ''
 RESOURCE_OWNER_KEY = ''
 RESOURCE_OWNER_SECRET = ''
+ALLOWED_HOSTS = []
 
 try:
     from local_config import *
