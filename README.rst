@@ -27,7 +27,7 @@ Dialer
 
 Для настройки приложения нужно отредактировать файл config.py
 
-**ASTERISK_ADDRESS** - asterisk адресс.
+**ASTERISK_ADDRESS** - asterisk адрес.
 
 **ASTERISK_PORT** - asterisk порт.
 
