@@ -4,11 +4,12 @@ from urlparse import urljoin
 import requests
 import asterisk.manager
 from requests_oauthlib import OAuth1
+from oauthlib.oauth1 import RequestValidator, ResourceEndpoint
 
 from flask import Flask, request, jsonify, abort
 
-from oauthlib.oauth1 import RequestValidator, ResourceEndpoint
 import config
+
 app = Flask(__name__)
 
 class DialerRequestValidator(RequestValidator):
