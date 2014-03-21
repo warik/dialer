@@ -4,6 +4,14 @@ Dialer
 Приложение для взаимодействия Prom.ua, Tiu.ru, Deal.by, Satu.kz с Asterisk.
 
 
+Требования
+============
+Необходимо установить следующие пакеты:
+
+- git
+- virtualenv
+- pip
+
 Установка
 ============
 .. code-block:: python
