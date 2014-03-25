@@ -11,6 +11,7 @@ from flask import Flask, request, jsonify, abort
 import config
 
 app = Flask(__name__)
+app.debug = config.DEBUG
 
 class DialerRequestValidator(RequestValidator):
     enforce_ssl = False
@@ -28,10 +29,16 @@ class DialerRequestValidator(RequestValidator):
         return True
 
     def validate_client_key(self, client_key, request):
-        return client_key == 'uaprom'
+        if client_key != 'uaprom':
+            app.logger.debug('Failed on validate_client_key')
+            return False
+        return True
 
     def validate_access_token(self, client_key, token, request):
-        return token == 'crm'
+        if token != 'crm':
+            app.logger.debug('Failed on validate_access_token')
+            return False
+        return True
 
     def validate_realms(self, client_key, token, request, uri=None,
             realms=None):
@@ -45,6 +52,7 @@ def oauth_protected(realms=None):
     def wrapper(f):
         @functools.wraps(f)
         def verify_oauth(*args, **kwargs):
+            app.logger.debug('Start verify request')
             v, r = endpoint.validate_protected_resource_request(request.url,
                     http_method=request.method,
                     body=request.data,
@@ -53,6 +61,7 @@ def oauth_protected(realms=None):
             if v:
                 return f(*args, **kwargs)
             else:
+                app.logger.debug('Not valid request.')
                 return abort(403)
         return verify_oauth
     return wrapper
@@ -67,6 +76,7 @@ SITES = {
 @app.route('/call', methods=['POST'])
 @oauth_protected()
 def call():
+    app.logger.debug('Start call')
     inline = request.form['inline']
     exten = request.form['exten']
 
@@ -89,12 +99,14 @@ def call():
     finally:
         manager.close()
     app.logger.debug('Try to call status=%s and error=%s and response=%s' % (status, error_msg, response))
+    app.logger.debug('Finish call')
     return jsonify(status=status, error=error_msg, response=response)
 
 
 @app.route('/show_inuse', methods=['GET'])
 @oauth_protected()
 def show_inuse():
+    app.logger.debug('Start show_inuse')
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
@@ -113,11 +125,13 @@ def show_inuse():
 
     finally:
         manager.close()
+    app.logger.debug('Finish show_inuse')
     return jsonify(status=status, error=error_msg, response=response)
     
 @app.route('/show_channels', methods=['GET'])
 @oauth_protected()
 def show_channels():
+    app.logger.debug('Start show_channels')
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
@@ -136,11 +150,13 @@ def show_channels():
 
     finally:
         manager.close()
+    app.logger.debug('Finish show_channels')
     return jsonify(status=status, error=error_msg, response=response)
 
 @app.route('/spy', methods=['POST'])
 @oauth_protected()
 def spy():
+    app.logger.debug('Start spy')
     inline = request.form['inline']
     exten = request.form['exten']
     manager = asterisk.manager.Manager()
@@ -166,12 +182,14 @@ def spy():
         error_msg = 'Error: %s' % reason
     finally:
         manager.close()
+    app.logger.debug('Finish spy')
     return jsonify(status=status, error=error_msg, response=response)
 
 
 @app.route('/queue_add', methods=['POST'])
 @oauth_protected()
 def queue_add():
+    app.logger.debug('Start queue_add')
     queue = request.form['queue']
     interface = request.form['interface']
     state_interface = request.form['state_interface']
@@ -198,12 +216,14 @@ def queue_add():
         error_msg = 'Error: %s' % reason
     finally:
         manager.close()
+    app.logger.debug('Finish queue_add')
     return jsonify(status=status, error=error_msg, response=response)
 
     
 @app.route('/db_get', methods=['GET'])
 @oauth_protected()
 def db_get():
+    app.logger.debug('Start db_get')
     family = request.args['family']
     key = request.args['key']
     manager = asterisk.manager.Manager()
@@ -224,11 +244,13 @@ def db_get():
 
     finally:
         manager.close()
+    app.logger.debug('Finish db_get')
     return jsonify(status=status, error=error_msg, response=response)
 
 @app.route('/queue_status', methods=['GET'])
 @oauth_protected()
 def queue_status():
+    app.logger.debug('Start queue_status')
     manager = asterisk.manager.Manager()
     status, error_msg, response = 'success', '', ''
     try:
@@ -249,11 +271,13 @@ def queue_status():
 
     finally:
         manager.close()
+    app.logger.debug('Finish queue_status')
     return jsonify(status=status, error=error_msg, response=response)
 
 @app.route('/queue_remove', methods=['POST'])
 @oauth_protected()
 def queue_remove():
+    app.logger.debug('Start queue_remove')
     queue = request.form['queue']
     interface = request.form['interface']
     manager = asterisk.manager.Manager()
@@ -277,6 +301,7 @@ def queue_remove():
         error_msg = 'Error: %s' % reason
     finally:
         manager.close()
+    app.logger.debug('Finish queue_remove')
     return jsonify(status=status, error=error_msg, response=response)
 
 ### API ###

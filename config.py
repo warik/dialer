@@ -7,6 +7,8 @@ RESOURCE_OWNER_KEY = ''
 RESOURCE_OWNER_SECRET = ''
 ALLOWED_HOSTS = []
 
+DEBUG = False
+
 try:
     from local_config import *
 except ImportError:
