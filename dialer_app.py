@@ -53,9 +53,10 @@ def oauth_protected(realms=None):
         @functools.wraps(f)
         def verify_oauth(*args, **kwargs):
             app.logger.debug('Start verify request')
+            app.logger.debug('request.url=%s request.method=%s request.data=%s request.headers=%s realms=%s' % (request.url, request.method, request.form or request.data, request.headers, realms))
             v, r = endpoint.validate_protected_resource_request(request.url,
                     http_method=request.method,
-                    body=request.data,
+                    body=request.form or request.data,
                     headers=request.headers,
                     realms=realms or [])
             if v:
