@@ -68,10 +68,10 @@ def oauth_protected(realms=None):
     return wrapper
 
 SITES = {
-    'UA': 'http://my.prom.ua/',
-    'RU': 'http://my.tiu.ru/',
-    'BY': 'http://my.deal.by/',
-    'KZ': 'http://my.satu.kz/',
+    'UA': 'https://my.prom.ua/',
+    'RU': 'https://my.tiu.ru/',
+    'BY': 'https://my.deal.by/',
+    'KZ': 'https://my.satu.kz/',
 }
 
 @app.route('/call', methods=['POST'])
