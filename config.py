@@ -9,6 +9,8 @@ ALLOWED_HOSTS = []
 
 DEBUG = False
 
+API_TIMEOUT = 2
+
 try:
     from local_config import *
 except ImportError:

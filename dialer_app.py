@@ -315,7 +315,7 @@ def manager_phone():
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone')
     payload = {'calling_phone': calling_phone}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth)
+    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
     if response.status_code == 200:
         return response.text
     else:
@@ -330,7 +330,7 @@ def manager_phone_for_company():
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone_for_company')
     payload = {'id': id}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth)
+    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
     if response.status_code == 200:
         return response.text
     else:
@@ -346,7 +346,7 @@ def show_calling_popup_to_manager():
     api_url = urljoin(SITES[country], '/agency/api/manager/show_calling_popup_to_manager')
     payload = {'calling_phone': calling_phone, 'inner_number': inner_number}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth)
+    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
     if response.status_code == 200:
         return response.text
     else:
@@ -362,7 +362,7 @@ def show_calling_review_popup_to_manager():
     api_url = urljoin(SITES[country], '/agency/api/manager/show_calling_review_popup_to_manager')
     payload = {'inner_number': inner_number, 'review_href': review_href}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth)
+    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
     if response.status_code == 200:
         return response.text
     else:
@@ -377,7 +377,7 @@ def manager_call_after_hours():
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_call_after_hours')
     payload = {'calling_phone': calling_phone}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth)
+    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
     if response.status_code == 200:
         return response.text
     else:
