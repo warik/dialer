@@ -4,3 +4,4 @@ requests==2.2.1
 requests-oauthlib==0.4.0
 oauthlib==0.6.1
 gunicorn==18.0
+eventlet==0.14.0

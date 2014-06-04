@@ -1,7 +1,9 @@
 import functools
+from werkzeug.exceptions import RequestTimeout
 from urlparse import urljoin
 
 import requests
+import eventlet
 import asterisk.manager
 from requests_oauthlib import OAuth1
 from oauthlib.oauth1 import RequestValidator, ResourceEndpoint
@@ -9,6 +11,7 @@ from oauthlib.oauth1 import RequestValidator, ResourceEndpoint
 from flask import Flask, request, jsonify, abort
 
 import config
+eventlet.monkey_patch()
 
 app = Flask(__name__)
 app.debug = config.DEBUG
@@ -315,11 +318,13 @@ def manager_phone():
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone')
     payload = {'calling_phone': calling_phone}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
-    if response.status_code == 200:
-        return response.text
-    else:
-        abort(response.status_code)
+    with eventlet.Timeout(config.API_TIMEOUT, False):
+        response = requests.get(api_url, params=payload, auth=auth)
+        if response.status_code == 200:
+            return response.text
+        else:
+            abort(response.status_code)
+    raise RequestTimeout
 
 @app.route('/api/manager_phone_for_company', methods=['GET'])
 def manager_phone_for_company():
@@ -330,11 +335,13 @@ def manager_phone_for_company():
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_phone_for_company')
     payload = {'id': id}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
-    if response.status_code == 200:
-        return response.text
-    else:
-        abort(response.status_code)
+    with eventlet.Timeout(config.API_TIMEOUT, False):
+        response = requests.get(api_url, params=payload, auth=auth)
+        if response.status_code == 200:
+            return response.text
+        else:
+            abort(response.status_code)
+    raise RequestTimeout
 
 @app.route('/api/show_calling_popup_to_manager', methods=['GET'])
 def show_calling_popup_to_manager():
@@ -346,11 +353,13 @@ def show_calling_popup_to_manager():
     api_url = urljoin(SITES[country], '/agency/api/manager/show_calling_popup_to_manager')
     payload = {'calling_phone': calling_phone, 'inner_number': inner_number}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
-    if response.status_code == 200:
-        return response.text
-    else:
-        abort(response.status_code)
+    with eventlet.Timeout(config.API_TIMEOUT, False):
+        response = requests.get(api_url, params=payload, auth=auth)
+        if response.status_code == 200:
+            return response.text
+        else:
+            abort(response.status_code)
+    raise RequestTimeout
 
 @app.route('/api/show_calling_review_popup_to_manager', methods=['GET'])
 def show_calling_review_popup_to_manager():
@@ -362,11 +371,13 @@ def show_calling_review_popup_to_manager():
     api_url = urljoin(SITES[country], '/agency/api/manager/show_calling_review_popup_to_manager')
     payload = {'inner_number': inner_number, 'review_href': review_href}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
-    if response.status_code == 200:
-        return response.text
-    else:
-        abort(response.status_code)
+    with eventlet.Timeout(config.API_TIMEOUT, False):
+        response = requests.get(api_url, params=payload, auth=auth)
+        if response.status_code == 200:
+            return response.text
+        else:
+            abort(response.status_code)
+    raise RequestTimeout
 
 @app.route('/api/manager_call_after_hours', methods=['GET'])
 def manager_call_after_hours():
@@ -377,8 +388,10 @@ def manager_call_after_hours():
     api_url = urljoin(SITES[country], '/agency/api/manager/manager_call_after_hours')
     payload = {'calling_phone': calling_phone}
     auth = OAuth1('dialer', resource_owner_key=config.RESOURCE_OWNER_KEY, resource_owner_secret=config.RESOURCE_OWNER_SECRET)
-    response = requests.get(api_url, params=payload, auth=auth, timeout=config.API_TIMEOUT)
-    if response.status_code == 200:
-        return response.text
-    else:
-        abort(response.status_code)
+    with eventlet.Timeout(config.API_TIMEOUT, False):
+        response = requests.get(api_url, params=payload, auth=auth)
+        if response.status_code == 200:
+            return response.text
+        else:
+            abort(response.status_code)
+    raise RequestTimeout
