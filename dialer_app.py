@@ -111,8 +111,7 @@ def event_callback(event, manager):
 # @oauth_protected()
 def before_each_dialer_request(*args, **kwargs):
     app.logger.debug('Try to connect and login to asterisk')
-    status = 'success'
-    response = ''
+    status, response, error_msg = 'success', '', ''
 
     try:
         if not manager.connected():
