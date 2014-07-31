@@ -115,12 +115,12 @@ def before_each_dialer_request(*args, **kwargs):
         if not manager.connected():
             manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
 
-        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
-        response = manager.send_action({
-            'Action': 'Events',
-            'EventMask': 'on',
-        }).response
-        manager.register_event('*', event_callback)
+            manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
+            response = manager.send_action({
+                'Action': 'Events',
+                'EventMask': 'on',
+            }).response
+            manager.register_event('*', event_callback)
     except asterisk.manager.ManagerSocketException, (errno, reason):
         status = 'failure'
         error_msg = 'Error connecting to the manager: %s' % reason
@@ -131,19 +131,6 @@ def before_each_dialer_request(*args, **kwargs):
         status = 'failure'
         error_msg = 'Error: %s' % reason
     log_action(status, error_msg, 'login-connect-listen_events', response)
-
-
-@ami_blueprint.after_request
-def after_each_dialer_request(flask_response):
-    status, action, error_msg = 'success', 'logoff', ''
-    if manager.connected():
-        try:
-            response = manager.logoff()
-        except asterisk.manager.ManagerException, reason:
-            status = 'failure'
-            error_msg = 'Error: %s' % reason
-        log_action(status, error_msg, 'logoff', response)
-    return flask_response
 
 
 @ami_blueprint.route('/call', methods=['POST'])
