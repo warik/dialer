@@ -103,14 +103,12 @@ def log_action(status, error_msg, action, response):
 
 
 def event_callback(event, manager):
-    app.logger.debug('Handling event - %s' % event)
-    app.logger.debug('Headers - %s' % event.headers)
+    app.logger.debug('Handling event - %s\nHeaders - %s' % (event, event.headers))
 
 
 @ami_blueprint.before_request
 # @oauth_protected()
 def before_each_dialer_request(*args, **kwargs):
-    app.logger.debug('Try to connect and login to asterisk')
     status, response, error_msg = 'success', '', ''
 
     try:
@@ -136,7 +134,7 @@ def before_each_dialer_request(*args, **kwargs):
 
 
 @ami_blueprint.after_request
-def after_each_dialer_request(*args, **kwargs):
+def after_each_dialer_request(flask_response):
     status, action, error_msg = 'success', 'logoff', ''
     if manager.connected():
         try:
@@ -144,7 +142,8 @@ def after_each_dialer_request(*args, **kwargs):
         except asterisk.manager.ManagerException, reason:
             status = 'failure'
             error_msg = 'Error: %s' % reason
-        log_action(status, error_msg, 'login-connect-listen_events', response)
+        log_action(status, error_msg, 'logoff', response)
+    return flask_response
 
 
 @ami_blueprint.route('/call', methods=['POST'])
@@ -156,7 +155,6 @@ def call():
     channel = 'SIP/%s' % inline
     status, error_msg, response, action = 'success', '', '', 'call'
     try:
-        app.logger.debug('Try to call channel=%s and exten=%s' % (channel, exten))
         response = manager.originate(
             channel, exten, caller_id='call_from_CRM <CRM>', async=True
         ).response
