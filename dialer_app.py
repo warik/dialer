@@ -118,7 +118,8 @@ def before_each_dialer_request(*args, **kwargs):
             manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
             response = manager.send_action({
                 'Action': 'Events',
-                'EventMask': 'on',
+                'Events': 'on',
+                'EventMask': 'cdr',
             }).response
             manager.register_event('*', event_callback)
     except asterisk.manager.ManagerSocketException, (errno, reason):
