@@ -96,73 +96,56 @@ SITES = {
 
 def log_action(status, error_msg, action, response):
     app.logger.debug(
-        'Try to %s status=%s and error=%s and response=%s' % (
+        'Tried to %s status=%s and error=%s and response=%s' % (
             action, status, error_msg, response
         )
     )
-    app.logger.debug('Finish %s' % action)
 
 
 def event_callback(event, manager):
     app.logger.debug('Handling event - %s' % event)
-
-
-# @app.before_first_request
-# def before_first_dialer_request(*args, **kwargs):
-#     status = 'success'
-#     response = ''
-#     try:
-#         app.logger.debug(
-#             'Try to connect to asterisk_address=%s and asterisk_port=%s' % (
-#                 config.ASTERISK_ADDRESS, config.ASTERISK_PORT
-#             )
-#         )
-#         manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
-#         app.logger.debug(
-#             'Try to login to asterisk_login=%s and asterisk_password=%s' % (
-#                 config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD
-#             )
-#         )
-#         manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
-#         response = manager.send_action({
-#             'Action': 'Events',
-#             'EventMask': 'call,hangup',
-#         }).response
-#         manager.register_event('*', event_callback)
-#     except asterisk.manager.ManagerSocketException, (errno, reason):
-#         status = 'failure'
-#         error_msg = 'Error connecting to the manager: %s' % reason
-#     except asterisk.manager.ManagerAuthException, reason:
-#         status = 'failure'
-#         error_msg = 'Error login to the manager: %s' % reason
-#     except asterisk.manager.ManagerException, reason:
-#         status = 'failure'
-#         error_msg = 'Error: %s' % reason
-#     log_action(status, error_msg, 'login-connect-listen_events', response)
-
-app.logger.debug(
-    'Try to connect to asterisk_address=%s and asterisk_port=%s' % (
-        config.ASTERISK_ADDRESS, config.ASTERISK_PORT
-    )
-)
-manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
-app.logger.debug(
-    'Try to login to asterisk_login=%s and asterisk_password=%s' % (
-        config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD
-    )
-)
-manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
-response = manager.send_action({
-    'Action': 'Events',
-    'EventMask': 'call,hangup',
-}).response
-manager.register_event('*', event_callback)
+    app.logger.debug('Headers - %s' % event.headers)
 
 
 @ami_blueprint.before_request
 # @oauth_protected()
 def before_each_dialer_request(*args, **kwargs):
-    pass
+    app.logger.debug('Try to connect and login to asterisk')
+    status = 'success'
+    response = ''
+
+    try:
+        if not manager.connected():
+            manager.connect(config.ASTERISK_ADDRESS, config.ASTERISK_PORT)
+
+        manager.login(config.ASTERISK_LOGIN, config.ASTERISK_PASSWORD)
+        response = manager.send_action({
+            'Action': 'Events',
+            'EventMask': 'on',
+        }).response
+        manager.register_event('*', event_callback)
+    except asterisk.manager.ManagerSocketException, (errno, reason):
+        status = 'failure'
+        error_msg = 'Error connecting to the manager: %s' % reason
+    except asterisk.manager.ManagerAuthException, reason:
+        status = 'failure'
+        error_msg = 'Error login to the manager: %s' % reason
+    except asterisk.manager.ManagerException, reason:
+        status = 'failure'
+        error_msg = 'Error: %s' % reason
+    log_action(status, error_msg, 'login-connect-listen_events', response)
+
+
+@ami_blueprint.after_request
+def after_each_dialer_request(*args, **kwargs):
+    status, action, error_msg = 'success', 'logoff', ''
+    if manager.connected():
+        try:
+            response = manager.logoff()
+        except asterisk.manager.ManagerException, reason:
+            status = 'failure'
+            error_msg = 'Error: %s' % reason
+        log_action(status, error_msg, 'login-connect-listen_events', response)
 
 
 @ami_blueprint.route('/call', methods=['POST'])
